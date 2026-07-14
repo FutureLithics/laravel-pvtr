@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreLicenseImportRequest;
 use App\Models\ImportBatch;
 use App\Models\LicenseRecord;
 use App\Services\LicenseImportService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -22,14 +22,10 @@ class AdminImportController extends Controller
         ]);
     }
 
-    public function store(Request $request, LicenseImportService $importService): RedirectResponse
+    public function store(StoreLicenseImportRequest $request, LicenseImportService $importService): RedirectResponse
     {
-        $validated = $request->validate([
-            'license_file' => ['required', 'file', 'mimes:xlsx,txt,tsv', 'max:10240'],
-        ]);
-
-        $file = $validated['license_file'];
-        $storedPath = $file->store('imports');
+        $file = $request->file('license_file');
+        $storedPath = $file->store('imports', 'local');
 
         try {
             $batch = $importService->import(

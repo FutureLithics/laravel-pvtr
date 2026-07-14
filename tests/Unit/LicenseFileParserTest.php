@@ -22,9 +22,9 @@ class LicenseFileParserTest extends TestCase
         $rows = (new LicenseFileParser)->parse($path, 'txt');
 
         $this->assertCount(1, $rows);
-        $this->assertSame('100-001', $rows[0]['license_number']);
-        $this->assertSame('Example Escarrá', $rows[0]['entity_name']);
-        $this->assertSame('Person@Example.com', $rows[0]['email']);
+        $this->assertSame('100-001', $rows[0]->values['license_number']);
+        $this->assertSame('Example Escarrá', $rows[0]->values['entity_name']);
+        $this->assertSame('Person@Example.com', $rows[0]->values['email']);
     }
 
     public function test_it_imports_every_xlsx_sheet_with_matching_headers(): void
@@ -51,7 +51,10 @@ class LicenseFileParserTest extends TestCase
         $rows = (new LicenseFileParser)->parse($path, 'xlsx');
 
         $this->assertCount(2, $rows);
-        $this->assertSame(['100-001', '100-002'], array_column($rows, 'license_number'));
+        $this->assertSame(
+            ['100-001', '100-002'],
+            array_map(fn ($row) => $row->values['license_number'], $rows),
+        );
     }
 
     /**

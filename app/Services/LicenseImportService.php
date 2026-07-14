@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\ImportStatus;
 use App\Models\ImportBatch;
 use App\Models\LicenseRecord;
 use App\Models\User;
+use App\Support\ParsedLicenseRow;
+use App\Support\TextNormalizer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -32,7 +35,7 @@ class LicenseImportService
                 'original_filename' => $originalFilename,
                 'stored_path' => $storedPath,
                 'file_type' => $extension,
-                'status' => 'completed',
+                'status' => ImportStatus::Completed,
                 'total_rows' => count($rows),
                 'imported_rows' => 0,
                 'skipped_rows' => 0,
@@ -54,15 +57,14 @@ class LicenseImportService
                 LicenseRecord::updateOrCreate(
                     ['license_number' => $record['license_number']],
                     [
+                        ...$record,
                         'import_batch_id' => $batch->id,
-                        'license_prefix' => $record['license_prefix'],
-                        'entity_name' => $record['entity_name'],
-                        'entity_type' => $record['entity_type'],
-                        'license_status' => $record['license_status'],
-                        'email' => $record['email'],
-                        'expiration_date' => $record['expiration_date'],
                         'is_current' => true,
-                        'source_row' => $row,
+                        'source_row' => [
+                            'worksheet' => $row->worksheet,
+                            'row_number' => $row->rowNumber,
+                            'values' => $row->values,
+                        ],
                     ],
                 );
 
@@ -88,15 +90,15 @@ class LicenseImportService
     }
 
     /**
-     * @param  array<string, mixed>  $row
      * @return array<string, mixed>|null
      */
-    private function normalizeRow(array $row): ?array
+    private function normalizeRow(ParsedLicenseRow $row): ?array
     {
-        $licenseNumber = $this->normalizeString($row['license_number'] ?? null);
-        $entityName = $this->normalizeString($row['entity_name'] ?? null);
-        $status = $this->normalizeString($row['license_status'] ?? null);
-        $expirationDate = $this->parseDate($row['expiration_date'] ?? null);
+        $values = $row->values;
+        $licenseNumber = TextNormalizer::string($values['license_number'] ?? null);
+        $entityName = TextNormalizer::string($values['entity_name'] ?? null);
+        $status = TextNormalizer::string($values['license_status'] ?? null);
+        $expirationDate = $this->parseDate($values['expiration_date'] ?? null);
 
         if ($licenseNumber === '' || $entityName === '' || $status === '' || $expirationDate === null) {
             return null;
@@ -104,18 +106,18 @@ class LicenseImportService
 
         return [
             'license_number' => $licenseNumber,
-            'license_prefix' => $this->normalizeString($row['license_prefix'] ?? null) ?: null,
+            'license_prefix' => TextNormalizer::string($values['license_prefix'] ?? null) ?: null,
             'entity_name' => $entityName,
-            'entity_type' => $this->normalizeString($row['entity_type'] ?? null) ?: null,
+            'entity_type' => TextNormalizer::string($values['entity_type'] ?? null) ?: null,
             'license_status' => $status,
-            'email' => $this->normalizeEmail($row['email'] ?? null),
+            'email' => TextNormalizer::email($values['email'] ?? null),
             'expiration_date' => $expirationDate->toDateString(),
         ];
     }
 
     private function parseDate(mixed $value): ?CarbonImmutable
     {
-        $value = $this->normalizeString($value);
+        $value = TextNormalizer::string($value);
 
         if ($value === '') {
             return null;
@@ -134,17 +136,5 @@ class LicenseImportService
         } catch (\Throwable) {
             return null;
         }
-    }
-
-    private function normalizeEmail(mixed $value): ?string
-    {
-        $value = strtolower($this->normalizeString($value));
-
-        return $value === '' ? null : $value;
-    }
-
-    private function normalizeString(mixed $value): string
-    {
-        return trim((string) $value);
     }
 }

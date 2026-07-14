@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Support\ParsedLicenseRow;
+use App\Support\TextNormalizer;
 use InvalidArgumentException;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
@@ -22,7 +24,7 @@ class LicenseFileParser
     ];
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, ParsedLicenseRow>
      */
     public function parse(string $path, ?string $extension = null): array
     {
@@ -36,7 +38,7 @@ class LicenseFileParser
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, ParsedLicenseRow>
      */
     private function parseDelimitedFile(string $path): array
     {
@@ -57,7 +59,7 @@ class LicenseFileParser
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, ParsedLicenseRow>
      */
     private function parseSpreadsheet(string $path): array
     {
@@ -79,7 +81,7 @@ class LicenseFileParser
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, ParsedLicenseRow>
      */
     private function rowsFromWorksheet(Worksheet $worksheet): array
     {
@@ -94,31 +96,29 @@ class LicenseFileParser
 
     /**
      * @param  array<int, array<int, mixed>>  $matrix
-     * @return array<int, array<string, mixed>>
+     * @return array<int, ParsedLicenseRow>
      */
     private function rowsFromMatrix(array $matrix, ?string $worksheetName = null): array
     {
         [$headerIndex, $columns] = $this->findHeader($matrix);
         $rows = [];
 
-        foreach (array_slice($matrix, $headerIndex + 1) as $rowNumber => $row) {
+        foreach (array_slice($matrix, $headerIndex + 1) as $offset => $row) {
             if ($this->isEmptyRow($row)) {
                 continue;
             }
 
-            $record = [
-                'source_row_number' => $headerIndex + $rowNumber + 2,
-                'source_worksheet' => $worksheetName,
-                'source_row' => [],
-            ];
+            $values = [];
 
             foreach ($columns as $index => $field) {
-                $value = $this->stringValue($row[$index] ?? null);
-                $record[$field] = $value;
-                $record['source_row'][$field] = $value;
+                $values[$field] = TextNormalizer::string($row[$index] ?? null);
             }
 
-            $rows[] = $record;
+            $rows[] = new ParsedLicenseRow(
+                rowNumber: $headerIndex + $offset + 2,
+                worksheet: $worksheetName,
+                values: $values,
+            );
         }
 
         return $rows;
@@ -134,7 +134,7 @@ class LicenseFileParser
             $columns = [];
 
             foreach ($row as $columnIndex => $heading) {
-                $normalized = $this->normalizeHeader($this->stringValue($heading));
+                $normalized = $this->normalizeHeader(TextNormalizer::string($heading));
 
                 if (array_key_exists($normalized, self::HEADER_MAP)) {
                     $columns[$columnIndex] = self::HEADER_MAP[$normalized];
@@ -155,7 +155,7 @@ class LicenseFileParser
     private function isEmptyRow(array $row): bool
     {
         foreach ($row as $value) {
-            if ($this->stringValue($value) !== '') {
+            if (TextNormalizer::string($value) !== '') {
                 return false;
             }
         }
@@ -178,10 +178,5 @@ class LicenseFileParser
         }
 
         return mb_convert_encoding($contents, 'UTF-8', 'Windows-1252, ISO-8859-1');
-    }
-
-    private function stringValue(mixed $value): string
-    {
-        return trim((string) $value);
     }
 }

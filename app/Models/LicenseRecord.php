@@ -26,11 +26,28 @@ class LicenseRecord extends Model
     use HasFactory;
 
     /**
+     * License status value that is considered valid during verification.
+     */
+    public const STATUS_ACTIVE = 'active';
+
+    /**
      * @return BelongsTo<ImportBatch, $this>
      */
     public function importBatch(): BelongsTo
     {
         return $this->belongsTo(ImportBatch::class);
+    }
+
+    /**
+     * Determine whether this record should verify as a valid license today:
+     * it must be part of the current snapshot, active, and not expired.
+     */
+    public function isValidForVerification(): bool
+    {
+        return $this->is_current
+            && strtolower((string) $this->license_status) === self::STATUS_ACTIVE
+            && $this->expiration_date !== null
+            && $this->expiration_date->toDateString() >= now()->toDateString();
     }
 
     /**

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\VerifyLicenseRequest;
 use App\Models\LicenseRecord;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class VerificationController extends Controller
@@ -16,18 +16,9 @@ class VerificationController extends Controller
         ]);
     }
 
-    public function verify(Request $request): View
+    public function verify(VerifyLicenseRequest $request): View
     {
-        $validated = $request->validate([
-            'license_number' => ['required', 'string', 'max:255'],
-            'license_prefix' => ['nullable', 'required_without_all:email,entity_name', 'string', 'max:255'],
-            'email' => ['nullable', 'required_without_all:license_prefix,entity_name', 'email', 'max:255'],
-            'entity_name' => ['nullable', 'required_without_all:license_prefix,email', 'string', 'max:255'],
-        ], [
-            'license_prefix.required_without_all' => 'Enter a license prefix, email, or entity name to verify this license.',
-            'email.required_without_all' => 'Enter a license prefix, email, or entity name to verify this license.',
-            'entity_name.required_without_all' => 'Enter a license prefix, email, or entity name to verify this license.',
-        ]);
+        $validated = $request->validated();
 
         $license = LicenseRecord::query()
             ->where('is_current', true)
@@ -36,9 +27,7 @@ class VerificationController extends Controller
 
         $isValid = $license !== null
             && $this->matchesCorroboratingDetail($license, $validated)
-            && strtolower($license->license_status) === 'active'
-            && $license->expiration_date !== null
-            && $license->expiration_date->toDateString() >= now()->toDateString();
+            && $license->isValidForVerification();
 
         return view('verification.index', [
             'result' => $isValid ? 'valid' : 'invalid',
