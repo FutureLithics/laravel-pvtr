@@ -27,3 +27,7 @@ Homestead.yaml
 Thumbs.db
 
 /test_docs
+
+error_log
+**/error_log
+*.log
