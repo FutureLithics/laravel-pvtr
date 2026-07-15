@@ -95,27 +95,10 @@ class VerificationLookupTest extends TestCase
             ->assertSee('No valid matching license was found.');
     }
 
-    public function test_verify_redirects_to_home_so_refresh_does_not_require_get_verify_route(): void
+    public function test_get_verify_route_displays_the_form_for_safe_refreshes(): void
     {
-        LicenseRecord::create([
-            'license_number' => '100-001',
-            'license_prefix' => '01126',
-            'entity_name' => 'Example Person',
-            'entity_type' => 'Individual',
-            'license_status' => 'Active',
-            'email' => 'person@example.com',
-            'expiration_date' => now()->addYear()->toDateString(),
-            'is_current' => true,
-        ]);
-
-        $this->post(route('verification.verify'), [
-            'license_number' => '100-001',
-            'email' => 'person@example.com',
-        ])
-            ->assertRedirect(route('verification.index'));
-
-        $this->get(route('verification.index'))
+        $this->get(route('verification.show'))
             ->assertOk()
-            ->assertSee('License is valid.');
+            ->assertSee('Check whether a logo license is valid');
     }
 }

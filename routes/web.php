@@ -7,6 +7,7 @@ use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [VerificationController::class, 'index'])->name('verification.index');
+Route::get('/verify', [VerificationController::class, 'index'])->name('verification.show');
 Route::post('/verify', [VerificationController::class, 'verify'])->name('verification.verify');
 
 Route::middleware('guest')->group(function (): void {
