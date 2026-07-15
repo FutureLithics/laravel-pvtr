@@ -23,10 +23,11 @@ class VerificationLookupTest extends TestCase
             'is_current' => true,
         ]);
 
-        $this->post(route('verification.verify'), [
-            'license_number' => '100-001',
-            'email' => 'PERSON@example.com',
-        ])
+        $this->followingRedirects()
+            ->post(route('verification.verify'), [
+                'license_number' => '100-001',
+                'email' => 'PERSON@example.com',
+            ])
             ->assertOk()
             ->assertSee('License is valid.')
             ->assertSee('Example Person');
@@ -45,10 +46,11 @@ class VerificationLookupTest extends TestCase
             'is_current' => true,
         ]);
 
-        $this->post(route('verification.verify'), [
-            'license_number' => '100-001',
-            'email' => 'other@example.com',
-        ])
+        $this->followingRedirects()
+            ->post(route('verification.verify'), [
+                'license_number' => '100-001',
+                'email' => 'other@example.com',
+            ])
             ->assertOk()
             ->assertSee('No valid matching license was found.')
             ->assertDontSee('Example Person');
@@ -78,14 +80,42 @@ class VerificationLookupTest extends TestCase
             'is_current' => true,
         ]);
 
-        $this->post(route('verification.verify'), [
+        $this->followingRedirects()
+            ->post(route('verification.verify'), [
+                'license_number' => '100-001',
+                'email' => 'stale@example.com',
+            ])
+            ->assertSee('No valid matching license was found.');
+
+        $this->followingRedirects()
+            ->post(route('verification.verify'), [
+                'license_number' => '100-002',
+                'email' => 'expired@example.com',
+            ])
+            ->assertSee('No valid matching license was found.');
+    }
+
+    public function test_verify_redirects_to_home_so_refresh_does_not_require_get_verify_route(): void
+    {
+        LicenseRecord::create([
             'license_number' => '100-001',
-            'email' => 'stale@example.com',
-        ])->assertSee('No valid matching license was found.');
+            'license_prefix' => '01126',
+            'entity_name' => 'Example Person',
+            'entity_type' => 'Individual',
+            'license_status' => 'Active',
+            'email' => 'person@example.com',
+            'expiration_date' => now()->addYear()->toDateString(),
+            'is_current' => true,
+        ]);
 
         $this->post(route('verification.verify'), [
-            'license_number' => '100-002',
-            'email' => 'expired@example.com',
-        ])->assertSee('No valid matching license was found.');
+            'license_number' => '100-001',
+            'email' => 'person@example.com',
+        ])
+            ->assertRedirect(route('verification.index'));
+
+        $this->get(route('verification.index'))
+            ->assertOk()
+            ->assertSee('License is valid.');
     }
 }

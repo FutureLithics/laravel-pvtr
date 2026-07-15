@@ -4,19 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\VerifyLicenseRequest;
 use App\Models\LicenseRecord;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class VerificationController extends Controller
 {
     public function index(): View
     {
+        $license = null;
+
+        if ($licenseId = session('verification.license_id')) {
+            $license = LicenseRecord::query()->find($licenseId);
+        }
+
         return view('verification.index', [
-            'result' => null,
-            'license' => null,
+            'result' => session('verification.result'),
+            'license' => $license,
         ]);
     }
 
-    public function verify(VerifyLicenseRequest $request): View
+    public function verify(VerifyLicenseRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -29,10 +36,16 @@ class VerificationController extends Controller
             && $this->matchesCorroboratingDetail($license, $validated)
             && $license->isValidForVerification();
 
-        return view('verification.index', [
-            'result' => $isValid ? 'valid' : 'invalid',
-            'license' => $isValid ? $license : null,
-        ]);
+        $redirect = redirect()
+            ->route('verification.index')
+            ->withInput($request->only(['license_number', 'license_prefix', 'email', 'entity_name']))
+            ->with('verification.result', $isValid ? 'valid' : 'invalid');
+
+        if ($isValid) {
+            $redirect->with('verification.license_id', $license->id);
+        }
+
+        return $redirect;
     }
 
     /**
