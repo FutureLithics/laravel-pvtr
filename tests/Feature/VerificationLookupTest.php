@@ -23,17 +23,15 @@ class VerificationLookupTest extends TestCase
             'is_current' => true,
         ]);
 
-        $this->followingRedirects()
-            ->post(route('verification.verify'), [
-                'license_number' => '100-001',
-                'email' => 'PERSON@example.com',
-            ])
+        $this->post(route('verification.verify'), [
+            'license_number' => '100-001',
+        ])
             ->assertOk()
             ->assertSee('License is valid.')
             ->assertSee('Example Person');
     }
 
-    public function test_public_lookup_rejects_mismatched_details(): void
+    public function test_public_lookup_rejects_unknown_license_number(): void
     {
         LicenseRecord::create([
             'license_number' => '100-001',
@@ -46,11 +44,9 @@ class VerificationLookupTest extends TestCase
             'is_current' => true,
         ]);
 
-        $this->followingRedirects()
-            ->post(route('verification.verify'), [
-                'license_number' => '100-001',
-                'email' => 'other@example.com',
-            ])
+        $this->post(route('verification.verify'), [
+            'license_number' => '999-999',
+        ])
             ->assertOk()
             ->assertSee('No valid matching license was found.')
             ->assertDontSee('Example Person');
@@ -80,19 +76,13 @@ class VerificationLookupTest extends TestCase
             'is_current' => true,
         ]);
 
-        $this->followingRedirects()
-            ->post(route('verification.verify'), [
-                'license_number' => '100-001',
-                'email' => 'stale@example.com',
-            ])
-            ->assertSee('No valid matching license was found.');
+        $this->post(route('verification.verify'), [
+            'license_number' => '100-001',
+        ])->assertSee('No valid matching license was found.');
 
-        $this->followingRedirects()
-            ->post(route('verification.verify'), [
-                'license_number' => '100-002',
-                'email' => 'expired@example.com',
-            ])
-            ->assertSee('No valid matching license was found.');
+        $this->post(route('verification.verify'), [
+            'license_number' => '100-002',
+        ])->assertSee('No valid matching license was found.');
     }
 
     public function test_get_verify_route_displays_the_form_for_safe_refreshes(): void

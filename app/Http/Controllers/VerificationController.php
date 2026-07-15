@@ -25,33 +25,11 @@ class VerificationController extends Controller
             ->where('license_number', trim($validated['license_number']))
             ->first();
 
-        $isValid = $license !== null
-            && $this->matchesCorroboratingDetail($license, $validated)
-            && $license->isValidForVerification();
+        $isValid = $license !== null && $license->isValidForVerification();
 
         return view('verification.index', [
             'result' => $isValid ? 'valid' : 'invalid',
             'license' => $isValid ? $license : null,
         ]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $input
-     */
-    private function matchesCorroboratingDetail(LicenseRecord $license, array $input): bool
-    {
-        if (($input['license_prefix'] ?? null) && trim((string) $input['license_prefix']) === $license->license_prefix) {
-            return true;
-        }
-
-        if (($input['email'] ?? null) && strtolower(trim((string) $input['email'])) === strtolower((string) $license->email)) {
-            return true;
-        }
-
-        if (($input['entity_name'] ?? null) && strtolower(trim((string) $input['entity_name'])) === strtolower($license->entity_name)) {
-            return true;
-        }
-
-        return false;
     }
 }
