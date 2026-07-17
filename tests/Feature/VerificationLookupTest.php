@@ -28,6 +28,28 @@ class VerificationLookupTest extends TestCase
         ])
             ->assertOk()
             ->assertSee('License is valid.')
+            ->assertSee('Example Person')
+            ->assertSee('person@example.com');
+    }
+
+    public function test_public_user_can_verify_license_number_without_dash(): void
+    {
+        LicenseRecord::create([
+            'license_number' => '100-001',
+            'license_prefix' => '01126',
+            'entity_name' => 'Example Person',
+            'entity_type' => 'Individual',
+            'license_status' => 'Active',
+            'email' => 'person@example.com',
+            'expiration_date' => now()->addYear()->toDateString(),
+            'is_current' => true,
+        ]);
+
+        $this->post(route('verification.verify'), [
+            'license_number' => '100001',
+        ])
+            ->assertOk()
+            ->assertSee('License is valid.')
             ->assertSee('Example Person');
     }
 

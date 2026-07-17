@@ -19,7 +19,7 @@
                         name="license_number"
                         type="text"
                         value="{{ old('license_number') }}"
-                        placeholder="###-###"
+                        placeholder="###### or ###-###"
                         required
                         class="mt-2 block w-full rounded-md border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-900 focus:outline-none"
                     >
@@ -45,6 +45,12 @@
                             <dt class="font-medium">Entity</dt>
                             <dd>{{ $license->entity_name }}</dd>
                         </div>
+                        @if ($license->email)
+                            <div>
+                                <dt class="font-medium">Contact</dt>
+                                <dd>{{ $license->email }}</dd>
+                            </div>
+                        @endif
                         <div>
                             <dt class="font-medium">Status</dt>
                             <dd>{{ $license->license_status }}</dd>

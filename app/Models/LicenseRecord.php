@@ -39,6 +39,14 @@ class LicenseRecord extends Model
     }
 
     /**
+     * Normalize a license number for comparison by removing dashes and spaces.
+     */
+    public static function normalizeLicenseNumber(string $value): string
+    {
+        return preg_replace('/[\s\-]+/', '', trim($value)) ?? '';
+    }
+
+    /**
      * Determine whether this record should verify as a valid license today:
      * it must be part of the current snapshot, active, and not expired.
      */

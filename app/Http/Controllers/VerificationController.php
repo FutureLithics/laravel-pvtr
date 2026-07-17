@@ -18,11 +18,11 @@ class VerificationController extends Controller
 
     public function verify(VerifyLicenseRequest $request): View
     {
-        $validated = $request->validated();
+        $normalizedLicenseNumber = LicenseRecord::normalizeLicenseNumber($request->validated('license_number'));
 
         $license = LicenseRecord::query()
             ->where('is_current', true)
-            ->where('license_number', trim($validated['license_number']))
+            ->whereRaw("REPLACE(REPLACE(license_number, '-', ''), ' ', '') = ?", [$normalizedLicenseNumber])
             ->first();
 
         $isValid = $license !== null && $license->isValidForVerification();
