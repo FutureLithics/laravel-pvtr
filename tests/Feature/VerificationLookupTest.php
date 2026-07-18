@@ -29,7 +29,11 @@ class VerificationLookupTest extends TestCase
             ->assertOk()
             ->assertSee('License is valid.')
             ->assertSee('Example Person')
-            ->assertSee('person@example.com');
+            ->assertSee('person@example.com')
+            ->assertSee('There are two types of entity: an individual and a corporation/organization.')
+            ->assertSee('The email address associated with this license record.')
+            ->assertSee('The current license status. Only an Active status can verify as valid.')
+            ->assertDontSee('Expiration');
     }
 
     public function test_public_user_can_verify_license_number_without_dash(): void

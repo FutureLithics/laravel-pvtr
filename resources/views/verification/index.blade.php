@@ -42,22 +42,30 @@
                     <p class="font-medium text-emerald-900">License is valid.</p>
                     <dl class="mt-4 space-y-3 text-sm text-emerald-900">
                         <div>
-                            <dt class="font-medium">Entity</dt>
+                            <dt class="font-medium">
+                                <x-tooltip-label text="There are two types of entity: an individual and a corporation/organization.">
+                                    Entity
+                                </x-tooltip-label>
+                            </dt>
                             <dd>{{ $license->entity_name }}</dd>
                         </div>
                         @if ($license->email)
                             <div>
-                                <dt class="font-medium">Contact</dt>
+                                <dt class="font-medium">
+                                    <x-tooltip-label text="The email address associated with this license record.">
+                                        Contact
+                                    </x-tooltip-label>
+                                </dt>
                                 <dd>{{ $license->email }}</dd>
                             </div>
                         @endif
                         <div>
-                            <dt class="font-medium">Status</dt>
+                            <dt class="font-medium">
+                                <x-tooltip-label text="The current license status. Only an Active status can verify as valid.">
+                                    Status
+                                </x-tooltip-label>
+                            </dt>
                             <dd>{{ $license->license_status }}</dd>
-                        </div>
-                        <div>
-                            <dt class="font-medium">Expiration</dt>
-                            <dd>{{ $license->expiration_date?->format('M j, Y') }}</dd>
                         </div>
                     </dl>
                 </div>
